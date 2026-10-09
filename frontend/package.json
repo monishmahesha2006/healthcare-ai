@@ -8,6 +8,7 @@
     "build": "tsc && vite build",
     "start": "serve -s dist -l $PORT",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "test": "node --test src/tests/frontend.test.js",
     "preview": "vite preview"
   },
   "dependencies": {
