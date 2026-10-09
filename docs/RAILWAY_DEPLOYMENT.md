@@ -92,6 +92,7 @@ Backend health: `https://your-backend.up.railway.app/health` → `{"status": "he
 
 | Error | Fix |
 |---|---|
+| `Railpack could not determine how to build the app` | You deployed from root without setting Root Directory, OR your builder was Railpack on monorepo root. Fix: in Service Settings -> Source, set **Root Directory** to `backend` (for backend service) or `frontend` (for frontend service), OR use the provided root `Dockerfile` (builder: DOCKERFILE). |
 | Backend crashes | Check Logs — verify `DATABASE_URL` is set |
 | Frontend shows blank page | Verify `VITE_API_URL` is set, then **redeploy** frontend |
 | Login fails "Network request failed" | `VITE_API_URL` must be set BEFORE building — redeploy frontend |

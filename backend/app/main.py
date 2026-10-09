@@ -1,7 +1,7 @@
 import os
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
@@ -78,8 +78,27 @@ def on_startup():
         db.close()
 
 
+_possible_dist_paths = [
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend_dist")),
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend_dist")),
+    os.path.abspath(os.path.join(os.getcwd(), "frontend_dist")),
+]
+
+_frontend_dist = next(
+    (p for p in _possible_dist_paths if os.path.exists(p) and os.path.isfile(os.path.join(p, "index.html"))),
+    None,
+)
+
+if _frontend_dist:
+    _assets_path = os.path.join(_frontend_dist, "assets")
+    if os.path.exists(_assets_path):
+        app.mount("/assets", StaticFiles(directory=_assets_path), name="frontend_assets")
+
+
 @app.get("/")
 def root():
+    if _frontend_dist and os.path.isfile(os.path.join(_frontend_dist, "index.html")):
+        return FileResponse(os.path.join(_frontend_dist, "index.html"))
     return {
         "name": settings.APP_NAME,
         "version": "1.0.0",
@@ -98,3 +117,15 @@ def health_check():
         "service": "healthcare-ai-backend",
         "healthengine_rules": "v1.0.0 active",
     }
+
+
+if _frontend_dist:
+    @app.get("/{full_path:path}")
+    async def serve_spa_frontend(full_path: str):
+        if full_path.startswith("api/") or full_path in ("health", "docs", "redoc", "openapi.json"):
+            return JSONResponse(status_code=404, content={"detail": "Not found"})
+        candidate = os.path.join(_frontend_dist, full_path)
+        if os.path.isfile(candidate):
+            return FileResponse(candidate)
+        return FileResponse(os.path.join(_frontend_dist, "index.html"))
+
