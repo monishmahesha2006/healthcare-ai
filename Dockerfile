@@ -30,7 +30,10 @@ COPY backend/ ./backend/
 COPY --from=frontend-builder /app/frontend/dist ./frontend_dist
 
 WORKDIR /app/backend
+ENV PYTHONPATH="/app/backend:/app"
 ENV PORT=8000
 EXPOSE 8000
 
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+RUN mkdir -p /app/backend/data /app/backend/uploads /app/uploads
+
+CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

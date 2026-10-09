@@ -22,7 +22,8 @@ COPY . .
 # Create data and upload directories
 RUN mkdir -p /app/data /app/uploads
 
+ENV PYTHONPATH=/app
 EXPOSE ${PORT}
 
 # Railway sets $PORT at runtime — uvicorn reads it via shell expansion
-CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT}
+CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

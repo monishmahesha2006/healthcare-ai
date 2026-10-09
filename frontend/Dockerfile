@@ -22,11 +22,11 @@ FROM nginx:1.25-alpine
 # Copy built assets from builder
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Nginx config: serve index.html for all routes (React SPA routing)
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Nginx config template: serve index.html for all routes (React SPA routing)
+COPY nginx.conf /etc/nginx/conf.d/default.conf.template
 
-# Railway sets $PORT — use envsubst to inject it into nginx config at runtime
+# Railway sets $PORT — use envsubst to inject it into default.conf inside conf.d
 ENV PORT=80
 EXPOSE ${PORT}
 
-CMD ["/bin/sh", "-c", "envsubst '${PORT}' < /etc/nginx/conf.d/default.conf > /tmp/nginx.conf && nginx -c /tmp/nginx.conf -g 'daemon off;'"]
+CMD ["/bin/sh", "-c", "envsubst '${PORT}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"]

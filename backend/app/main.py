@@ -10,11 +10,6 @@ from app.db.session import engine, SessionLocal
 from app.db.seed import seed_database
 from app.api.api import api_router
 
-# Ensure tables are created on startup
-Base.metadata.create_all(bind=engine)
-
-# Create upload directory if it does not exist
-os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -70,12 +65,34 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 
 @app.on_event("startup")
 def on_startup():
-    """Initializes tables and seeds synthetic demo data on initial startup."""
-    db = SessionLocal()
+    """Initializes tables and seeds synthetic demo data on startup with retries."""
+    import time
+
+    # Ensure upload directory exists safely
     try:
-        seed_database(db)
-    finally:
-        db.close()
+        os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+    except Exception as exc:
+        print(f"Warning: Could not create upload directory {settings.UPLOAD_DIR}: {exc}")
+
+    # Retry database connection up to 5 times (avoids crashes while Postgres starts up)
+    max_retries = 5
+    for attempt in range(1, max_retries + 1):
+        try:
+            print(f"Initializing database (attempt {attempt}/{max_retries})...")
+            Base.metadata.create_all(bind=engine)
+            db = SessionLocal()
+            try:
+                seed_database(db)
+            finally:
+                db.close()
+            print("Database initialized and demo data ready.")
+            break
+        except Exception as exc:
+            print(f"Warning: Database attempt {attempt} failed: {exc}")
+            if attempt < max_retries:
+                time.sleep(2)
+            else:
+                print("Failed to connect to database after maximum retries. Continuing to keep server healthy.")
 
 
 _possible_dist_paths = [

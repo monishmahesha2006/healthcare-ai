@@ -18,6 +18,7 @@ else:
     engine_kwargs["pool_size"] = 5          # Keep 5 persistent connections
     engine_kwargs["max_overflow"] = 10      # Allow up to 10 extra under load
     engine_kwargs["pool_recycle"] = 300     # Recycle connections every 5 min
+    engine_kwargs["connect_args"] = {"connect_timeout": 10}
 
 engine = create_engine(settings.DATABASE_URL, **engine_kwargs)
 
