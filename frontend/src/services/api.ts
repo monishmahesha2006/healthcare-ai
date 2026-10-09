@@ -10,7 +10,18 @@ import {
   HealthcareFacility,
 } from '../types';
 
-const API_BASE = '/api/v1';
+/**
+ * In development, VITE_API_URL is not set — the Vite dev server proxy
+ * forwards /api/* to http://127.0.0.1:8000 automatically.
+ *
+ * In production (Railway), set the environment variable:
+ *   VITE_API_URL=https://your-backend-service.up.railway.app
+ *
+ * The frontend Railway service must have this variable set to the
+ * public URL of the backend Railway service.
+ */
+const BACKEND_URL = import.meta.env.VITE_API_URL ?? '';
+const API_BASE = `${BACKEND_URL}/api/v1`;
 
 function getAuthHeader(): Record<string, string> {
   const token = localStorage.getItem('healthcare_token');

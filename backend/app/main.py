@@ -10,7 +10,7 @@ from app.db.session import engine, SessionLocal
 from app.db.seed import seed_database
 from app.api.api import api_router
 
-# Ensure tables are created
+# Ensure tables are created on startup
 Base.metadata.create_all(bind=engine)
 
 # Create upload directory if it does not exist
@@ -25,11 +25,14 @@ app = FastAPI(
         "and Google Care Finder navigation."
     ),
     version="1.0.0",
+    # Only expose interactive docs in debug/dev mode
     docs_url="/docs" if settings.DEBUG else None,
     redoc_url="/redoc" if settings.DEBUG else None,
 )
 
+# ---------------------------------------------------------------------------
 # CORS Middleware
+# ---------------------------------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
@@ -39,7 +42,9 @@ app.add_middleware(
 )
 
 
+# ---------------------------------------------------------------------------
 # Security Headers Middleware
+# ---------------------------------------------------------------------------
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
     response = await call_next(request)
@@ -50,12 +55,16 @@ async def add_security_headers(request: Request, call_next):
     return response
 
 
-# Static files for safe attachments
+# ---------------------------------------------------------------------------
+# Static file serving for uploads
+# ---------------------------------------------------------------------------
 if os.path.exists(settings.UPLOAD_DIR):
     app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
 
 
-# Include API v1 Router
+# ---------------------------------------------------------------------------
+# API Router
+# ---------------------------------------------------------------------------
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 
@@ -77,14 +86,15 @@ def root():
         "status": "operational",
         "environment": settings.ENVIRONMENT,
         "docs": "/docs" if settings.DEBUG else "disabled in production",
-        "api_v1": settings.API_V1_STR
+        "api_v1": settings.API_V1_STR,
     }
 
 
 @app.get("/health")
 def health_check():
+    """Railway health check endpoint."""
     return {
         "status": "healthy",
         "service": "healthcare-ai-backend",
-        "healthengine_rules": "v1.0.0 active"
+        "healthengine_rules": "v1.0.0 active",
     }
